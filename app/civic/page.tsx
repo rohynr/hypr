@@ -298,6 +298,7 @@ export default function Civic() {
         onLocalityChange={handleLocalityChange}
         onToggleNav={() => setNavExpanded(!navExpanded)}
         isMobile={isMobile}
+        userProfile={null}
       />
 
       <div style={{ paddingTop: 57, display: 'flex', minHeight: 'calc(100vh - 57px)' }}>

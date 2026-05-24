@@ -447,12 +447,13 @@ export default function Around() {
   return (
     <div style={{ minHeight: '100vh', background: '#fff', fontFamily: 'var(--font-inter), Arial, sans-serif' }}>
       <Header
-        selectedLocality={selectedLocality}
-        localities={localities}
-        onLocalityChange={handleLocalityChange}
-        onToggleNav={() => setNavExpanded(!navExpanded)}
-        isMobile={isMobile}
-      />
+  selectedLocality={selectedLocality}
+  localities={localities}
+  onLocalityChange={handleLocalityChange}
+  onToggleNav={() => setNavExpanded(!navExpanded)}
+  isMobile={isMobile}
+  userProfile={null}
+/>
 
       <div style={{ paddingTop: 57, display: 'flex', minHeight: 'calc(100vh - 57px)' }}>
         {!isMobile && <LeftNav expanded={navExpanded} />}

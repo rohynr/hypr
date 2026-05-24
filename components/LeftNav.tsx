@@ -55,7 +55,7 @@ const SECONDARY_ITEMS = [
 
 const LEGAL_ITEMS = ['Hypr Rules', 'Privacy Policy', 'User Agreement', 'Accessibility']
 
-export function LeftNav({ expanded }: { expanded: boolean }) {
+function LeftNav({ expanded }: { expanded: boolean }) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const qs = searchParams.toString()
@@ -165,5 +165,14 @@ export function LeftNav({ expanded }: { expanded: boolean }) {
         </>
       )}
     </aside>
+  )
+}
+import { Suspense } from 'react'
+
+export function LeftNavWrapper(props: Parameters<typeof LeftNav>[0]) {
+  return (
+    <Suspense fallback={null}>
+      <LeftNav {...props} />
+    </Suspense>
   )
 }

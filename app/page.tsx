@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { LocationSelector, type Locality } from '@/components/LocationSelector'
-import { LeftNav } from '@/components/LeftNav'
+import { LeftNavWrapper as LeftNav } from '@/components/LeftNav'
 import { Header } from '@/components/Header'
 
 const MUMBAI_CITY_ID = '49a211bc-0e51-4ae1-97af-1b1a4f6f0a4b'

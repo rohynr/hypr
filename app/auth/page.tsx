@@ -58,7 +58,7 @@ export default function AuthPage() {
 
   return (
     <div style={{
-      Height: '100vh',
+      height: '100vh',
       display: 'flex',
       fontFamily: 'var(--font-inter), Arial, sans-serif',
       overflow: 'hidden',

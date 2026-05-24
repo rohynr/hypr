@@ -267,7 +267,7 @@ const unique = incoming.filter((a: Article) => { if (seen.has(a.id)) return fals
     observerRef.current = new IntersectionObserver(entries => { if (entries[0].isIntersecting) loadMore() }, { threshold: 0, rootMargin: '200px' })
     if (sentinelRef.current) observerRef.current.observe(sentinelRef.current)
     return () => observerRef.current?.disconnect()
-  }, [loadMore])
+  }, [loadMore, loading])
 
   return (
     <div style={{ minHeight: '100vh', background: '#fff', fontFamily: 'var(--font-inter), Arial, sans-serif' }}>

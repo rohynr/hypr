@@ -10,6 +10,8 @@ export function Header({
   onToggleNav,
   isMobile,
   userProfile,
+  homeLocalityId,
+  workLocalityId,
 }: {
   selectedLocality: Locality | null
   localities: Locality[]
@@ -17,6 +19,8 @@ export function Header({
   onToggleNav: () => void
   isMobile: boolean
   userProfile: { first_name: string; last_name: string } | null
+  homeLocalityId: string | null
+  workLocalityId: string | null
 }) {
   const [profileOpen, setProfileOpen] = useState(false)
   const profileRef = useRef<HTMLDivElement>(null)
@@ -50,7 +54,7 @@ export function Header({
 
       <div style={{ width: 1, height: 24, background: '#E0E0E0', marginRight: 12, flexShrink: 0 }} />
 
-      <LocationSelector selectedLocality={selectedLocality} localities={localities} onSelect={onLocalityChange} />
+      <LocationSelector selectedLocality={selectedLocality} localities={localities} onSelect={onLocalityChange} homeLocalityId={homeLocalityId} workLocalityId={workLocalityId} />
 
       <div style={{ flex: 1 }} />
 

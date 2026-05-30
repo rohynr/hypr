@@ -49,10 +49,14 @@ function MapCircle() {
   )
 }
 
-export function LocationSelector({ selectedLocality, localities, onSelect }: {
+const FONT = 'var(--font-inter), Arial, sans-serif'
+
+export function LocationSelector({ selectedLocality, localities, onSelect, homeLocalityId, workLocalityId }: {
   selectedLocality: Locality | null
   localities: Locality[]
   onSelect: (l: Locality | null) => void
+  homeLocalityId: string | null
+  workLocalityId: string | null
 }) {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
@@ -64,18 +68,23 @@ export function LocationSelector({ selectedLocality, localities, onSelect }: {
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
 
-  const filtered = localities.filter(l => l.name.toLowerCase().includes(search.toLowerCase()))
+  const isHome = !!homeLocalityId && selectedLocality?.id === homeLocalityId
   const wardLabel = getWardLabel(selectedLocality)
-  const displayName = selectedLocality?.name || 'All of Mumbai'
+  const primaryLabel = isHome ? 'Home' : (selectedLocality?.name || 'All of Mumbai')
 
-  const parents = filtered.filter(l => l.level === 'locality')
-  const microMap: Record<string, Locality[]> = {}
-  filtered.filter(l => l.level === 'microlocality').forEach(l => {
-    if (!l.parent_id) return
-    if (!microMap[l.parent_id]) microMap[l.parent_id] = []
-    microMap[l.parent_id].push(l)
-  })
-  const orphanMicros = filtered.filter(l => l.level === 'microlocality' && l.parent_id && !parents.find(p => p.id === l.parent_id))
+  const homeLocality = homeLocalityId ? localities.find(l => l.id === homeLocalityId) ?? null : null
+  const workLocality = workLocalityId ? localities.find(l => l.id === workLocalityId) ?? null : null
+  const hasSaved = !!(homeLocality || workLocality)
+
+  const exploreLocalities = localities
+    .filter(l => l.level === 'locality')
+    .filter(l => !search || l.name.toLowerCase().includes(search.toLowerCase()))
+    .sort((a, b) => a.name.localeCompare(b.name))
+
+  function rowBg(id: string) { return selectedLocality?.id === id ? '#F7FCF9' : '#fff' }
+  function rowHover(e: React.MouseEvent<HTMLDivElement>, id: string, on: boolean) {
+    if (selectedLocality?.id !== id) e.currentTarget.style.background = on ? '#fafafa' : '#fff'
+  }
 
   return (
     <div ref={ref} style={{ position: 'relative' }}>
@@ -93,79 +102,110 @@ export function LocationSelector({ selectedLocality, localities, onSelect }: {
       >
         <MapCircle />
         <div style={{ textAlign: 'left' }}>
-          <div style={{ fontSize: 14, fontWeight: 600, color: '#0f0f0f', fontFamily: 'var(--font-inter), Arial, sans-serif', display: 'flex', alignItems: 'center', gap: 4 }}>
-            {displayName}
+          <div style={{ fontSize: 14, fontWeight: 600, color: '#0f0f0f', fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 4 }}>
+            {primaryLabel}
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2.5" strokeLinecap="round"><polyline points="6 9 12 15 18 9"/></svg>
           </div>
-          {selectedLocality && (
-            <div style={{ fontSize: 11, color: '#888', fontFamily: 'var(--font-inter), Arial, sans-serif', marginTop: -2 }}>{wardLabel}</div>
-          )}
+          {isHome ? (
+            <div style={{ fontSize: 11, color: '#888', fontFamily: FONT, marginTop: -2 }}>
+              {selectedLocality!.name}{wardLabel ? ` · ${wardLabel}` : ''}
+            </div>
+          ) : selectedLocality && wardLabel ? (
+            <div style={{ fontSize: 11, color: '#888', fontFamily: FONT, marginTop: -2 }}>{wardLabel}</div>
+          ) : null}
         </div>
       </button>
 
       {open && (
         <div style={{ position: 'absolute', top: 'calc(100% + 8px)', left: 0, width: 300, background: '#fff', border: '1px solid #E8E8E8', borderRadius: 16, boxShadow: '0 8px 32px rgba(0,0,0,0.10)', zIndex: 1000, overflow: 'hidden' }}>
           <div style={{ padding: '10px 12px', borderBottom: '1px solid #f0f0f0' }}>
-            <input autoFocus placeholder="Search locality or area..." value={search} onChange={e => setSearch(e.target.value)}
-              style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #E8E8E8', fontSize: 13, fontFamily: 'var(--font-inter), Arial, sans-serif', outline: 'none', background: '#fafafa', color: '#111' }} />
+            <input
+              autoFocus
+              placeholder="Search localities..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #E8E8E8', fontSize: 13, fontFamily: FONT, outline: 'none', background: '#fafafa', color: '#111', boxSizing: 'border-box' }}
+            />
           </div>
-          <div style={{ maxHeight: 360, overflowY: 'auto' }}>
-            <div onClick={() => { onSelect(null); setOpen(false); setSearch('') }}
+
+          <div style={{ maxHeight: 380, overflowY: 'auto' }}>
+            {/* All Mumbai */}
+            <div
+              onClick={() => { onSelect(null); setOpen(false); setSearch('') }}
               style={{ padding: '10px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, background: !selectedLocality ? '#F7FCF9' : '#fff', borderBottom: '1px solid #f0f0f0', transition: 'background 0.1s' }}
               onMouseEnter={e => { if (selectedLocality) e.currentTarget.style.background = '#fafafa' }}
               onMouseLeave={e => { if (selectedLocality) e.currentTarget.style.background = '#fff' }}
             >
-              <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#2BA887' }} />
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#2BA887', flexShrink: 0 }} />
               <div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: '#111', fontFamily: 'var(--font-inter), Arial, sans-serif' }}>All Mumbai</div>
-                <div style={{ fontSize: 11, color: '#888', fontFamily: 'var(--font-inter), Arial, sans-serif' }}>Show all stories</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#111', fontFamily: FONT }}>All Mumbai</div>
+                <div style={{ fontSize: 11, color: '#888', fontFamily: FONT }}>Show all stories</div>
               </div>
             </div>
 
-            {parents.map(parent => (
-              <div key={parent.id}>
-                <div onClick={() => { onSelect(parent); setOpen(false); setSearch('') }}
-                  style={{ padding: '10px 16px', cursor: 'pointer', background: selectedLocality?.id === parent.id ? '#F7FCF9' : '#fff', borderTop: '1px solid #f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'background 0.1s' }}
-                  onMouseEnter={e => { if (selectedLocality?.id !== parent.id) e.currentTarget.style.background = '#fafafa' }}
-                  onMouseLeave={e => { if (selectedLocality?.id !== parent.id) e.currentTarget.style.background = '#fff' }}
-                >
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: '#111', fontFamily: 'var(--font-inter), Arial, sans-serif' }}>{parent.name}</div>
-                    <div style={{ fontSize: 11, color: '#888', fontFamily: 'var(--font-inter), Arial, sans-serif' }}>
-                      {parent.admin_zones?.display_name || 'Locality'}
+            {/* Saved Locations */}
+            {hasSaved && (
+              <>
+                <div style={{ padding: '10px 16px 4px', fontSize: 11, fontWeight: 600, color: '#aaa', fontFamily: FONT, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Saved Locations</div>
+                {homeLocality && (
+                  <div
+                    onClick={() => { onSelect(homeLocality); setOpen(false); setSearch('') }}
+                    style={{ padding: '9px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, background: rowBg(homeLocality.id), transition: 'background 0.1s' }}
+                    onMouseEnter={e => rowHover(e, homeLocality.id, true)}
+                    onMouseLeave={e => rowHover(e, homeLocality.id, false)}
+                  >
+                    <span style={{ fontSize: 16, lineHeight: 1, flexShrink: 0 }}>🏠</span>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: '#111', fontFamily: FONT }}>Home</div>
+                      <div style={{ fontSize: 11, color: '#888', fontFamily: FONT }}>
+                        {homeLocality.name}{getWardLabel(homeLocality) ? ` · ${getWardLabel(homeLocality)}` : ''}
+                      </div>
                     </div>
                   </div>
-                  {microMap[parent.id]?.length > 0 && (
-                    <div style={{ fontSize: 10, color: '#bbb', fontFamily: 'var(--font-inter), Arial, sans-serif' }}>{microMap[parent.id].length} areas</div>
-                  )}
-                </div>
-                {(microMap[parent.id] || []).map(micro => (
-                  <div key={micro.id} onClick={() => { onSelect(micro); setOpen(false); setSearch('') }}
-                    style={{ padding: '8px 16px 8px 36px', cursor: 'pointer', background: selectedLocality?.id === micro.id ? '#F7FCF9' : '#fafafa', borderTop: '1px solid #f5f5f5', display: 'flex', alignItems: 'center', gap: 8, transition: 'background 0.1s' }}
-                    onMouseEnter={e => { if (selectedLocality?.id !== micro.id) e.currentTarget.style.background = '#F0F0F0' }}
-                    onMouseLeave={e => { if (selectedLocality?.id !== micro.id) e.currentTarget.style.background = '#fafafa' }}
+                )}
+                {workLocality && (
+                  <div
+                    onClick={() => { onSelect(workLocality); setOpen(false); setSearch('') }}
+                    style={{ padding: '9px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, background: rowBg(workLocality.id), transition: 'background 0.1s' }}
+                    onMouseEnter={e => rowHover(e, workLocality.id, true)}
+                    onMouseLeave={e => rowHover(e, workLocality.id, false)}
                   >
-                    <div style={{ width: 4, height: 4, borderRadius: '50%', background: '#ccc', flexShrink: 0 }} />
-                    <div style={{ fontSize: 12, color: '#444', fontFamily: 'var(--font-inter), Arial, sans-serif' }}>{micro.name}</div>
+                    <span style={{ fontSize: 16, lineHeight: 1, flexShrink: 0 }}>💼</span>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: '#111', fontFamily: FONT }}>Work</div>
+                      <div style={{ fontSize: 11, color: '#888', fontFamily: FONT }}>
+                        {workLocality.name}{getWardLabel(workLocality) ? ` · ${getWardLabel(workLocality)}` : ''}
+                      </div>
+                    </div>
                   </div>
-                ))}
-              </div>
-            ))}
-
-            {orphanMicros.map(micro => (
-              <div key={micro.id} onClick={() => { onSelect(micro); setOpen(false); setSearch('') }}
-                style={{ padding: '10px 16px', cursor: 'pointer', background: selectedLocality?.id === micro.id ? '#F7FCF9' : '#fff', borderTop: '1px solid #f5f5f5', transition: 'background 0.1s' }}
-                onMouseEnter={e => { if (selectedLocality?.id !== micro.id) e.currentTarget.style.background = '#fafafa' }}
-                onMouseLeave={e => { if (selectedLocality?.id !== micro.id) e.currentTarget.style.background = '#fff' }}
-              >
-                <div style={{ fontSize: 13, fontWeight: 500, color: '#111', fontFamily: 'var(--font-inter), Arial, sans-serif' }}>{micro.name}</div>
-                <div style={{ fontSize: 11, color: '#888', fontFamily: 'var(--font-inter), Arial, sans-serif' }}>Microlocality</div>
-              </div>
-            ))}
-
-            {filtered.length === 0 && (
-              <div style={{ padding: 16, textAlign: 'center', color: '#aaa', fontSize: 13, fontFamily: 'var(--font-inter), Arial, sans-serif' }}>No results for "{search}"</div>
+                )}
+                <div style={{ borderTop: '1px solid #f0f0f0', margin: '6px 0 0' }} />
+              </>
             )}
+
+            {/* Explore */}
+            <div style={{ padding: '10px 16px 4px', fontSize: 11, fontWeight: 600, color: '#aaa', fontFamily: FONT, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Explore</div>
+            {exploreLocalities.map(locality => (
+              <div
+                key={locality.id}
+                onClick={() => { onSelect(locality); setOpen(false); setSearch('') }}
+                style={{ padding: '9px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: rowBg(locality.id), transition: 'background 0.1s' }}
+                onMouseEnter={e => rowHover(e, locality.id, true)}
+                onMouseLeave={e => rowHover(e, locality.id, false)}
+              >
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: '#111', fontFamily: FONT }}>{locality.name}</div>
+                  <div style={{ fontSize: 11, color: '#888', fontFamily: FONT }}>{locality.admin_zones?.display_name || 'Locality'}</div>
+                </div>
+                {locality.id === homeLocalityId && (
+                  <span style={{ fontSize: 14, lineHeight: 1 }}>🏠</span>
+                )}
+              </div>
+            ))}
+            {exploreLocalities.length === 0 && search && (
+              <div style={{ padding: 16, textAlign: 'center', color: '#aaa', fontSize: 13, fontFamily: FONT }}>No results for &ldquo;{search}&rdquo;</div>
+            )}
+            <div style={{ height: 8 }} />
           </div>
         </div>
       )}

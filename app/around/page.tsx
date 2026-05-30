@@ -346,6 +346,8 @@ function EventsCard({ events }: { events: Event[] }) {
 export default function Around() {
   const [localities, setLocalities]                   = useState<Locality[]>([])
   const [persistedLocalityId, setPersistedLocalityId] = useState<string | null>(null)
+  const [userProfile, setUserProfile]                 = useState<{ first_name: string; last_name: string } | null>(null)
+  const [homeLocalityId, setHomeLocalityId]           = useState<string | null>(null)
   const [isMobile, setIsMobile]                       = useState(false)
   const [navExpanded, setNavExpanded]                 = useState(true)
   const [weather, setWeather]                         = useState<WeatherData | null | 'loading' | 'error'>('loading')
@@ -393,6 +395,26 @@ export default function Around() {
     fetch(`/api/localities?city_id=${MUMBAI_CITY_ID}`)
       .then(r => r.json())
       .then(d => setLocalities(d.localities || []))
+  }, [])
+
+  useEffect(() => {
+    async function fetchProfile() {
+      const { createClient } = await import('@/utils/supabase/client')
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: profile } = await supabase
+          .from('users')
+          .select('first_name, last_name, locality_id')
+          .eq('id', user.id)
+          .single()
+        if (profile) {
+          setUserProfile({ first_name: profile.first_name, last_name: profile.last_name })
+          if (profile.locality_id) setHomeLocalityId(profile.locality_id)
+        }
+      }
+    }
+    fetchProfile()
   }, [])
 
   // Fetch alerts when locality changes
@@ -447,13 +469,15 @@ export default function Around() {
   return (
     <div style={{ minHeight: '100vh', background: '#fff', fontFamily: 'var(--font-inter), Arial, sans-serif' }}>
       <Header
-  selectedLocality={selectedLocality}
-  localities={localities}
-  onLocalityChange={handleLocalityChange}
-  onToggleNav={() => setNavExpanded(!navExpanded)}
-  isMobile={isMobile}
-  userProfile={null}
-/>
+        selectedLocality={selectedLocality}
+        localities={localities}
+        onLocalityChange={handleLocalityChange}
+        onToggleNav={() => setNavExpanded(!navExpanded)}
+        isMobile={isMobile}
+        userProfile={userProfile}
+        homeLocalityId={homeLocalityId}
+        workLocalityId={null}
+      />
 
       <div style={{ paddingTop: 57, display: 'flex', minHeight: 'calc(100vh - 57px)' }}>
         {!isMobile && <LeftNav expanded={navExpanded} />}

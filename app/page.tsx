@@ -18,6 +18,7 @@ type Article = {
   published_at: string
   source_name: string
   source_url: string | null
+  locality_id: string | null
   locality_name: string
   locality_level: string
   parent_locality_name: string | null
@@ -25,6 +26,7 @@ type Article = {
   zone_code: string | null
   category: string | null
   confidence: number
+  match_level?: string
 }
 
 function timeAgo(dateStr: string) {
@@ -85,9 +87,10 @@ function SourceAvatar({ name, sourceUrl }: { name: string; sourceUrl: string | n
   )
 }
 
-function ArticleCard({ article }: { article: Article }) {
+function ArticleCard({ article, homeLocalityId }: { article: Article; homeLocalityId: string | null }) {
   const label = localityLabel(article)
   const displayName = cleanSourceName(article.source_name)
+  const isNearYou = !!homeLocalityId && article.locality_id === homeLocalityId
 
   return (
     <article style={{ background: '#fff', borderBottom: '1px solid #EBEBEB', padding: '16px 0' }}>
@@ -112,6 +115,9 @@ function ArticleCard({ article }: { article: Article }) {
 
       <div style={{ display: 'flex', gap: 6, marginBottom: 12, flexWrap: 'wrap', alignItems: 'center' }}>
         <span style={{ fontSize: 11, fontWeight: 500, padding: '4px 10px', borderRadius: 24, background: '#F7FCF9', color: '#000', fontFamily: 'var(--font-inter), Arial, sans-serif', border: '1px solid #E0F0EA' }}>{label === 'Mumbai (City-wide)' ? 'City Wide' : label}</span>
+        {isNearYou && (
+          <span style={{ fontSize: 11, fontWeight: 600, padding: '4px 10px', borderRadius: 24, background: '#2BA887', color: '#fff', fontFamily: 'var(--font-inter), Arial, sans-serif' }}>Near you</span>
+        )}
         {article.admin_zone_display_name && (
           <span style={{ fontSize: 11, fontWeight: 500, padding: '4px 10px', borderRadius: 24, background: '#2B78A8', color: '#fff', fontFamily: 'var(--font-inter), Arial, sans-serif' }}>{article.admin_zone_display_name}</span>
         )}
@@ -155,6 +161,7 @@ function ArticleCard({ article }: { article: Article }) {
 
 export default function Home() {
   const [userProfile, setUserProfile] = useState<{ first_name: string; last_name: string } | null>(null)
+  const [homeLocalityId, setHomeLocalityId] = useState<string | null>(null)
   const [articles, setArticles] = useState<Article[]>([])
   const [localities, setLocalities] = useState<Locality[]>([])
   const [persistedLocalityId, setPersistedLocalityId] = useState<string | null>(null)
@@ -187,8 +194,9 @@ export default function Home() {
 
 
       if (profile) {
-  setUserProfile({ first_name: profile.first_name, last_name: profile.last_name })
-}
+        setUserProfile({ first_name: profile.first_name, last_name: profile.last_name })
+        if (profile.locality_id) setHomeLocalityId(profile.locality_id)
+      }
 
       if (profile?.locality_id) {
         const userLocality = allLocalities.find((l: Locality) => l.id === profile.locality_id)
@@ -264,7 +272,7 @@ const unique = incoming.filter((a: Article) => { if (seen.has(a.id)) return fals
 
   useEffect(() => {
     if (observerRef.current) observerRef.current.disconnect()
-    observerRef.current = new IntersectionObserver(entries => { if (entries[0].isIntersecting) loadMore() }, { threshold: 0, rootMargin: '200px' })
+    observerRef.current = new IntersectionObserver(entries => { if (entries[0].isIntersecting) loadMore() }, { threshold: 0, rootMargin: '400px' })
     if (sentinelRef.current) observerRef.current.observe(sentinelRef.current)
     return () => observerRef.current?.disconnect()
   }, [loadMore, loading])
@@ -278,6 +286,8 @@ const unique = incoming.filter((a: Article) => { if (seen.has(a.id)) return fals
   onToggleNav={() => setNavExpanded(!navExpanded)}
   isMobile={isMobile}
   userProfile={userProfile}
+  homeLocalityId={homeLocalityId}
+  workLocalityId={null}
 />
 
       <div style={{ paddingTop: 57, display: 'flex', minHeight: 'calc(100vh - 57px)' }}>
@@ -297,14 +307,12 @@ const unique = incoming.filter((a: Article) => { if (seen.has(a.id)) return fals
                   </div>
                 </div>
               ) : (
-                <>
-                  {articles.map(article => <ArticleCard key={article.id} article={article} />)}
-                  <div ref={sentinelRef} style={{ height: 80, display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 16 }}>
-  {loadingMore && <div style={{ fontSize: 13, color: '#aaa', fontFamily: 'var(--font-inter), Arial, sans-serif' }}>Loading more stories...</div>}
-  {!hasMore && articles.length > 0 && <div style={{ fontSize: 13, color: '#ccc', fontFamily: 'var(--font-inter), Arial, sans-serif' }}>You're all caught up</div>}
-</div>
-                </>
+                articles.map(article => <ArticleCard key={article.id} article={article} homeLocalityId={homeLocalityId} />)
               )}
+              <div ref={sentinelRef} style={{ height: 80, display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 16 }}>
+                {loadingMore && <div style={{ fontSize: 13, color: '#aaa', fontFamily: 'var(--font-inter), Arial, sans-serif' }}>Loading more stories...</div>}
+                {!hasMore && articles.length > 0 && <div style={{ fontSize: 13, color: '#ccc', fontFamily: 'var(--font-inter), Arial, sans-serif' }}>You're all caught up</div>}
+              </div>
             </div>
           </main>
 

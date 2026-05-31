@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import Link from 'next/link'
 import { LocationSelector, type Locality } from './LocationSelector'
 
 export function Header({
@@ -50,7 +51,9 @@ export function Header({
         </svg>
       </button>
 
-      <img src="/hypr.svg" alt="hypr" style={{ height: 28, width: 'auto', flexShrink: 0, marginRight: 12 }} />
+      <Link href="/" style={{ display: 'flex', alignItems: 'center', flexShrink: 0, marginRight: 12 }}>
+        <img src="/hypr.svg" alt="hypr" style={{ height: 28, width: 'auto', display: 'block' }} />
+      </Link>
 
       <div style={{ width: 1, height: 24, background: '#E0E0E0', marginRight: 12, flexShrink: 0 }} />
 

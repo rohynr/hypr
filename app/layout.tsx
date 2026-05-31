@@ -13,8 +13,9 @@ const plusJakarta = Plus_Jakarta_Sans({
 })
 
 export const metadata: Metadata = {
-  title: 'Hypr — Hyperlocal Mumbai News',
+  title: 'Hypr — Make the most of your neighbourhood',
   description: 'News filtered to your exact neighbourhood',
+  icons: { icon: '/favicon.png' },
 }
 
 export default function RootLayout({

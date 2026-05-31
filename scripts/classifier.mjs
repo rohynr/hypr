@@ -75,7 +75,7 @@ async function findDuplicates(articles) {
 // ── Category detection ────────────────────────────────────────
 
 const CATEGORY_KEYWORDS = {
-  crime:          ['murder', 'theft', 'robbery', 'arrested', 'police', 'fir', 'crime', 'assault', 'rape', 'kidnap', 'fraud', 'scam', 'accused', 'custody', 'bail', 'court', 'judge', 'verdict', 'sentence', 'criminal'],
+  crime:          ['murder', 'theft', 'robbery', 'arrested', 'fir', 'crime', 'assault', 'rape', 'kidnap', 'fraud', 'scam', 'accused', 'custody', 'bail', 'verdict', 'criminal', 'gangster', 'extortion', 'smuggling'],
   infrastructure: ['road', 'pothole', 'bridge', 'flyover', 'construction', 'repair', 'metro', 'railway', 'station', 'highway', 'footpath', 'signal', 'underpass', 'overpass', 'bmc', 'tender', 'project', 'infrastructure'],
   civic:          ['bmc', 'municipal', 'corporator', 'ward', 'garbage', 'waste', 'drainage', 'sewage', 'water supply', 'electricity', 'power cut', 'outage', 'encroachment', 'hawker', 'demolition', 'notice'],
   politics:       ['mla', 'mp', 'minister', 'election', 'party', 'bjp', 'congress', 'shiv sena', 'ncp', 'vote', 'campaign', 'rally', 'manifesto', 'political', 'government', 'assembly', 'parliament', 'corporator'],
@@ -175,7 +175,7 @@ function classifyLocality(article, localities, cityWideLocality) {
     const terms = buildSearchTerms(locality)
     const matched = terms.some(term => {
       const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-      const regex = new RegExp(`(?<![a-z])${escaped}(?![a-z])`, 'i')
+      const regex = new RegExp(`\\b${escaped}\\b`, 'i')
       return regex.test(text)
     })
 
@@ -194,7 +194,7 @@ function classifyLocality(article, localities, cityWideLocality) {
     const cityTerms = buildSearchTerms(cityWideLocality)
     const isCityWide = cityTerms.some(term => {
       const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-      const regex = new RegExp(`(?<![a-z])${escaped}(?![a-z])`, 'i')
+      const regex = new RegExp(`\\b${escaped}\\b`, 'i')
       return regex.test(text)
     })
 

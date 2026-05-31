@@ -143,6 +143,13 @@ export default function ArticlePage() {
   }, [])
 
   useEffect(() => {
+    if (article?.title) {
+      const truncated = article.title.length > 60 ? article.title.slice(0, 60) + '…' : article.title
+      document.title = `${truncated} / Hypr`
+    }
+  }, [article?.title])
+
+  useEffect(() => {
     if (!id) return
     async function init() {
       const { createClient } = await import('@/utils/supabase/client')

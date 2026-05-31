@@ -361,6 +361,12 @@ export default function Around() {
     return localities.find(l => l.id === persistedLocalityId) ?? null
   }, [persistedLocalityId, localities])
 
+  useEffect(() => {
+    document.title = selectedLocality
+      ? `Around — ${selectedLocality.name} / Hypr`
+      : 'Around / Hypr'
+  }, [selectedLocality])
+
   function handleLocalityChange(l: Locality | null) {
     if (l) {
       localStorage.setItem(LOCALITY_STORAGE_KEY, l.id)

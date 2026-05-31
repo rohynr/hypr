@@ -102,7 +102,7 @@ function ArticleCard({
   const router = useRouter()
   const label = localityLabel(article)
   const displayName = cleanSourceName(article.source_name)
-  const isNearYou = article.match_level === 'microlocality'
+  const isNearYou = article.match_level === 'microlocality' && article.locality_id === homeLocalityId
   const [hovered, setHovered] = useState(false)
   const [copied, setCopied] = useState(false)
 
@@ -164,7 +164,7 @@ function ArticleCard({
 
       {article.image_url && (
         <div style={{ marginBottom: 14, borderRadius: 8, overflow: 'hidden', background: '#f5f5f5' }}>
-          <img src={article.image_url} alt="" style={{ width: '100%', height: 220, objectFit: 'cover', display: 'block' }} onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
+          <img src={article.image_url} alt="" style={{ width: '100%', height: 'auto', display: 'block' }} onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
         </div>
       )}
 
@@ -288,6 +288,12 @@ export default function Home() {
     if (!persistedLocalityId) return null
     return localities.find(l => l.id === persistedLocalityId) ?? null
   }, [persistedLocalityId, localities])
+
+  useEffect(() => {
+    document.title = selectedLocality
+      ? `Newsfeed — ${selectedLocality.name} / Hypr`
+      : 'Newsfeed / Hypr'
+  }, [selectedLocality])
 
   function handleLocalityChange(l: Locality | null) {
     if (l) {

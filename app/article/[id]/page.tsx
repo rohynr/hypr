@@ -193,7 +193,7 @@ export default function ArticlePage() {
       } else {
         setArticle(best as ArticleDetail)
       }
-      setComments((commentsRes.data || []) as Comment[])
+      setComments((commentsRes.data || []) as unknown as Comment[])
       setLoading(false)
     }
     init()

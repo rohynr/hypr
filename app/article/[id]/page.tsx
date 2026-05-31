@@ -210,7 +210,7 @@ export default function ArticlePage() {
       .select('id, user_id, content, created_at, users(first_name, last_name)')
       .single()
     if (!error && data) {
-      setComments(prev => [data as Comment, ...prev])
+      setComments(prev => [data as unknown as Comment, ...prev])
       setCommentText('')
     }
     setSubmitting(false)

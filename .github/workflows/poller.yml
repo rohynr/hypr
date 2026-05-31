@@ -19,5 +19,21 @@ jobs:
           node-version: 20
       - run: npm install
       - run: node scripts/poller-once.mjs
-      - run: node scripts/classifier.mjs
-      - run: node scripts/image_fetcher.mjs
+      - name: Run classifier until complete
+        run: |
+          while true; do
+            output=$(node scripts/classifier.mjs)
+            echo "$output"
+            if echo "$output" | grep -q "No pending articles"; then
+              break
+            fi
+          done
+      - name: Run image fetcher until complete
+        run: |
+          while true; do
+            output=$(node scripts/image_fetcher.mjs)
+            echo "$output"
+            if echo "$output" | grep -q "No articles without images"; then
+              break
+            fi
+          done

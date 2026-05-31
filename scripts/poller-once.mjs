@@ -73,7 +73,6 @@ async function pollAll() {
     await pollFeed(source)
   }
   console.log('Poll complete.')
-  process.exit(0)
 }
 
-await pollAll()
+await pollAll().finally(() => process.exit(0))

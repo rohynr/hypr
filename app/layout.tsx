@@ -15,7 +15,13 @@ const plusJakarta = Plus_Jakarta_Sans({
 export const metadata: Metadata = {
   title: 'Hypr — Make the most of your neighbourhood',
   description: 'News filtered to your exact neighbourhood',
-  icons: { icon: '/favicon.png' },
+  icons: {
+    icon: [
+      { url: '/favicon.png', type: 'image/png' },
+    ],
+    shortcut: '/favicon.png',
+    apple: '/favicon.png',
+  },
 }
 
 export default function RootLayout({

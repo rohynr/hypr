@@ -8,6 +8,7 @@ on:
 jobs:
   poll:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     env:
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
@@ -17,6 +18,6 @@ jobs:
         with:
           node-version: 20
       - run: npm install
-      - run: node scripts/poller.mjs
+      - run: node scripts/poller-once.mjs
       - run: node scripts/classifier.mjs
       - run: node scripts/image_fetcher.mjs

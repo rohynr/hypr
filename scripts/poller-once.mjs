@@ -75,9 +75,5 @@ async function pollAll() {
   console.log('Poll complete.')
 }
 
-try {
-  await pollAll()
-} finally {
-  // Force exit after a short delay to allow any pending logs to flush
-  setTimeout(() => process.exit(0), 2000)
-}
+await pollAll()
+process.exit(0)

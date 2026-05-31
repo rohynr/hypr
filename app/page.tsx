@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import { LocationSelector, type Locality } from '@/components/LocationSelector'
 import { LeftNavWrapper as LeftNav } from '@/components/LeftNav'
 import { Header } from '@/components/Header'
@@ -87,13 +88,47 @@ function SourceAvatar({ name, sourceUrl }: { name: string; sourceUrl: string | n
   )
 }
 
-function ArticleCard({ article, homeLocalityId }: { article: Article; homeLocalityId: string | null }) {
+function ArticleCard({
+  article,
+  homeLocalityId,
+  isBookmarked,
+  onBookmarkToggle,
+}: {
+  article: Article
+  homeLocalityId: string | null
+  isBookmarked: boolean
+  onBookmarkToggle: (articleId: string, isBookmarked: boolean) => void
+}) {
+  const router = useRouter()
   const label = localityLabel(article)
   const displayName = cleanSourceName(article.source_name)
-  const isNearYou = !!homeLocalityId && article.locality_id === homeLocalityId
+  const isNearYou = article.match_level === 'microlocality'
+  const [hovered, setHovered] = useState(false)
+  const [copied, setCopied] = useState(false)
+
+  function goToArticle() { router.push(`/article/${article.id}`) }
+
+  function handleShare(e: React.MouseEvent) {
+    e.stopPropagation()
+    navigator.clipboard?.writeText(`https://hyprapp.in/article/${article.id}`)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
 
   return (
-    <article style={{ background: '#fff', borderBottom: '1px solid #EBEBEB', padding: '16px 0' }}>
+    <article
+      onClick={goToArticle}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        background: hovered ? '#FAFAFA' : '#fff',
+        borderBottom: `1px solid ${hovered ? '#D0D0D0' : '#EBEBEB'}`,
+        padding: '16px 8px',
+        cursor: 'pointer',
+        transition: 'background 0.12s, border-color 0.12s',
+        margin: '0 -8px',
+      }}
+    >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <SourceAvatar name={article.source_name} sourceUrl={article.source_url} />
@@ -103,13 +138,14 @@ function ArticleCard({ article, homeLocalityId }: { article: Article; homeLocali
           </div>
         </div>
         <button
+          onClick={e => e.stopPropagation()}
           style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#bbb', padding: '4px 8px', fontSize: 18, lineHeight: 1, letterSpacing: '0.05em', borderRadius: 6, transition: 'background 0.15s, color 0.15s' }}
           onMouseEnter={e => { e.currentTarget.style.background = '#f5f5f5'; e.currentTarget.style.color = '#555' }}
           onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = '#bbb' }}
         >···</button>
       </div>
 
-      <h2 onClick={() => window.open(article.url, '_blank')} style={{ fontSize: 18, fontWeight: 700, lineHeight: 1.5, color: '#0f0f0f', marginBottom: 10, cursor: 'pointer', fontFamily: 'var(--font-inter), Arial, sans-serif', letterSpacing: '-0.01em' }}>
+      <h2 style={{ fontSize: 18, fontWeight: 700, lineHeight: 1.5, color: '#0f0f0f', marginBottom: 10, fontFamily: 'var(--font-inter), Arial, sans-serif', letterSpacing: '-0.01em' }}>
         {article.title}
       </h2>
 
@@ -127,41 +163,66 @@ function ArticleCard({ article, homeLocalityId }: { article: Article; homeLocali
       </div>
 
       {article.image_url && (
-        <div onClick={() => window.open(article.url, '_blank')} style={{ cursor: 'pointer', marginBottom: 14, borderRadius: 8, overflow: 'hidden', background: '#f5f5f5' }}>
+        <div style={{ marginBottom: 14, borderRadius: 8, overflow: 'hidden', background: '#f5f5f5' }}>
           <img src={article.image_url} alt="" style={{ width: '100%', height: 220, objectFit: 'cover', display: 'block' }} onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
         </div>
       )}
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', gap: 4 }}>
-          {[
-            { key: 'like', icon: <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg> },
-            { key: 'comment', icon: <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> },
-            { key: 'share', icon: <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg> },
-          ].map(({ key, icon }) => (
-            <button key={key}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', color: '#aaa', padding: '6px 8px', borderRadius: 6, transition: 'background 0.15s, color 0.15s' }}
-              onMouseEnter={e => { e.currentTarget.style.background = '#f5f5f5'; e.currentTarget.style.color = '#555' }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = '#aaa' }}
-              onClick={key === 'share' ? () => navigator.clipboard?.writeText(`${window.location.origin}?article=${article.id}`) : undefined}
-            >{icon}</button>
-          ))}
+          <button
+            onClick={e => e.stopPropagation()}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', color: '#aaa', padding: '6px 8px', borderRadius: 6, transition: 'background 0.15s, color 0.15s' }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#f5f5f5'; e.currentTarget.style.color = '#555' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = '#aaa' }}
+          >
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
+          </button>
+          <button
+            onClick={e => e.stopPropagation()}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', color: '#aaa', padding: '6px 8px', borderRadius: 6, transition: 'background 0.15s, color 0.15s' }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#f5f5f5'; e.currentTarget.style.color = '#555' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = '#aaa' }}
+          >
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </button>
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={handleShare}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', color: copied ? '#2BA887' : '#aaa', padding: '6px 8px', borderRadius: 6, transition: 'background 0.15s, color 0.15s' }}
+              onMouseEnter={e => { e.currentTarget.style.background = '#f5f5f5'; if (!copied) e.currentTarget.style.color = '#555' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = copied ? '#2BA887' : '#aaa' }}
+            >
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+            </button>
+            {copied && (
+              <div style={{ position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)', marginBottom: 6, background: '#111', color: '#fff', fontSize: 11, fontWeight: 500, padding: '4px 8px', borderRadius: 6, whiteSpace: 'nowrap', fontFamily: 'var(--font-inter), Arial, sans-serif', pointerEvents: 'none' }}>
+                Copied!
+              </div>
+            )}
+          </div>
         </div>
         <button
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#aaa', padding: '6px 8px', borderRadius: 8, transition: 'background 0.15s, color 0.15s' }}
-          onMouseEnter={e => { e.currentTarget.style.background = '#f5f5f5'; e.currentTarget.style.color = '#555' }}
-          onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = '#aaa' }}
+          onClick={e => { e.stopPropagation(); onBookmarkToggle(article.id, isBookmarked) }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: isBookmarked ? '#2BA887' : '#aaa', padding: '6px 8px', borderRadius: 8, transition: 'background 0.15s, color 0.15s' }}
+          onMouseEnter={e => { e.currentTarget.style.background = '#f5f5f5'; if (!isBookmarked) e.currentTarget.style.color = '#555' }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = isBookmarked ? '#2BA887' : '#aaa' }}
         >
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill={isBookmarked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
         </button>
       </div>
     </article>
   )
 }
 
+type TrendingItem = { locality_id: string; locality_name: string; count: number }
+
 export default function Home() {
   const [userProfile, setUserProfile] = useState<{ first_name: string; last_name: string } | null>(null)
   const [homeLocalityId, setHomeLocalityId] = useState<string | null>(null)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set())
+  const [trending, setTrending] = useState<TrendingItem[]>([])
   const [articles, setArticles] = useState<Article[]>([])
   const [localities, setLocalities] = useState<Locality[]>([])
   const [persistedLocalityId, setPersistedLocalityId] = useState<string | null>(null)
@@ -171,28 +232,38 @@ export default function Home() {
   const [hasMore, setHasMore] = useState(true)
   const [isMobile, setIsMobile] = useState(false)
   const [navExpanded, setNavExpanded] = useState(true)
+  const [pullY, setPullY] = useState(0)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const ptStartY = useRef(0)
+  const ptActive = useRef(false)
+  const pullYRef = useRef(0)
+  const doRefresh = useRef<() => void>(() => {})
   useEffect(() => {
   async function init() {
     const { createClient } = await import('@/utils/supabase/client')
     const supabase = createClient()
 
-    const [localitiesRes] = await Promise.all([
+    const [localitiesRes, trendingRes] = await Promise.all([
       fetch(`/api/localities?city_id=${MUMBAI_CITY_ID}`),
+      fetch(`/api/trending?city_id=${MUMBAI_CITY_ID}`),
     ])
 
     const localitiesData = await localitiesRes.json()
     const allLocalities = localitiesData.localities || []
     setLocalities(allLocalities)
 
+    const trendingData = await trendingRes.json()
+    setTrending(trendingData.trending || [])
+
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
-      const { data: profile } = await supabase
-        .from('users')
-        .select('first_name, last_name, locality_id, admin_zone_id')
-        .eq('id', user.id)
-        .single()
+      setCurrentUserId(user.id)
+      const [profileRes, bookmarksRes] = await Promise.all([
+        supabase.from('users').select('first_name, last_name, locality_id, admin_zone_id').eq('id', user.id).single(),
+        supabase.from('bookmarks').select('article_id').eq('user_id', user.id),
+      ])
 
-
+      const profile = profileRes.data
       if (profile) {
         setUserProfile({ first_name: profile.first_name, last_name: profile.last_name })
         if (profile.locality_id) setHomeLocalityId(profile.locality_id)
@@ -201,6 +272,10 @@ export default function Home() {
       if (profile?.locality_id) {
         const userLocality = allLocalities.find((l: Locality) => l.id === profile.locality_id)
         if (userLocality) setPersistedLocalityId(userLocality.id)
+      }
+
+      if (bookmarksRes.data) {
+        setBookmarkedIds(new Set(bookmarksRes.data.map((b: { article_id: string }) => b.article_id)))
       }
     }
   }
@@ -224,6 +299,19 @@ export default function Home() {
     }
   }
 
+  async function handleBookmarkToggle(articleId: string, isBookmarked: boolean) {
+    if (!currentUserId) return
+    const { createClient } = await import('@/utils/supabase/client')
+    const supabase = createClient()
+    if (isBookmarked) {
+      await supabase.from('bookmarks').delete().eq('user_id', currentUserId).eq('article_id', articleId)
+      setBookmarkedIds(prev => { const next = new Set(prev); next.delete(articleId); return next })
+    } else {
+      await supabase.from('bookmarks').insert({ user_id: currentUserId, article_id: articleId })
+      setBookmarkedIds(prev => new Set([...prev, articleId]))
+    }
+  }
+
   useEffect(() => {
     const stored = localStorage.getItem(LOCALITY_STORAGE_KEY)
     if (stored) setPersistedLocalityId(stored)
@@ -236,7 +324,51 @@ export default function Home() {
     return () => window.removeEventListener('resize', check)
   }, [])
 
+  // Keep doRefresh always pointing at the current loadArticles closure
+  doRefresh.current = () => {
+    setIsRefreshing(true)
+    setPage(1)
+    setHasMore(true)
+    loadArticles(1, true)
+  }
 
+  useEffect(() => {
+    if (!isMobile) return
+    function onTouchStart(e: TouchEvent) {
+      if (window.scrollY !== 0) return
+      ptStartY.current = e.touches[0].clientY
+      ptActive.current = true
+    }
+    function onTouchMove(e: TouchEvent) {
+      if (!ptActive.current) return
+      const delta = e.touches[0].clientY - ptStartY.current
+      if (delta <= 0) { ptActive.current = false; pullYRef.current = 0; setPullY(0); return }
+      e.preventDefault()
+      const clamped = Math.min(Math.round(delta * 0.5), 80)
+      pullYRef.current = clamped
+      setPullY(clamped)
+    }
+    function onTouchEnd() {
+      if (!ptActive.current) return
+      ptActive.current = false
+      const finalY = pullYRef.current
+      pullYRef.current = 0
+      setPullY(0)
+      if (finalY >= 60) doRefresh.current()
+    }
+    window.addEventListener('touchstart', onTouchStart, { passive: true })
+    window.addEventListener('touchmove', onTouchMove, { passive: false })
+    window.addEventListener('touchend', onTouchEnd, { passive: true })
+    return () => {
+      window.removeEventListener('touchstart', onTouchStart)
+      window.removeEventListener('touchmove', onTouchMove)
+      window.removeEventListener('touchend', onTouchEnd)
+    }
+  }, [isMobile])
+
+  useEffect(() => {
+    if (!loading) setIsRefreshing(false)
+  }, [loading])
 
   useEffect(() => {
     setArticles([])
@@ -295,8 +427,19 @@ const unique = incoming.filter((a: Article) => { if (seen.has(a.id)) return fals
 
         <div style={{ flex: 1, display: 'flex', justifyContent: 'center', padding: '24px 24px 40px', gap: 24, minWidth: 0 }}>
           <main style={{ width: '100%', maxWidth: 640, minWidth: 0, flexShrink: 1 }}>
+            {isMobile && (pullY > 0 || isRefreshing) && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: isRefreshing ? 52 : pullY, overflow: 'hidden', transition: pullY > 0 ? 'none' : 'height 0.2s ease', color: '#2BA887', fontSize: 13, fontWeight: 500, fontFamily: 'var(--font-inter), Arial, sans-serif', gap: 8 }}>
+                {isRefreshing ? (
+                  <>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2BA887" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'ptr-spin 0.8s linear infinite' }}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                    Refreshing...
+                    <style>{`@keyframes ptr-spin { to { transform: rotate(360deg) } }`}</style>
+                  </>
+                ) : pullY >= 60 ? '↑ Release to refresh' : '↓ Pull to refresh'}
+              </div>
+            )}
             <div style={{ background: '#fff', padding: '0 4px' }}>
-              {loading ? (
+              {loading && !isRefreshing ? (
                 <div style={{ padding: 60, textAlign: 'center', color: '#aaa', fontSize: 14 }}>Loading stories...</div>
               ) : articles.length === 0 ? (
                 <div style={{ padding: 60, textAlign: 'center' }}>
@@ -307,7 +450,15 @@ const unique = incoming.filter((a: Article) => { if (seen.has(a.id)) return fals
                   </div>
                 </div>
               ) : (
-                articles.map(article => <ArticleCard key={article.id} article={article} homeLocalityId={homeLocalityId} />)
+                articles.map(article => (
+                  <ArticleCard
+                    key={article.id}
+                    article={article}
+                    homeLocalityId={homeLocalityId}
+                    isBookmarked={bookmarkedIds.has(article.id)}
+                    onBookmarkToggle={handleBookmarkToggle}
+                  />
+                ))
               )}
               <div ref={sentinelRef} style={{ height: 80, display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 16 }}>
                 {loadingMore && <div style={{ fontSize: 13, color: '#aaa', fontFamily: 'var(--font-inter), Arial, sans-serif' }}>Loading more stories...</div>}
@@ -319,9 +470,26 @@ const unique = incoming.filter((a: Article) => { if (seen.has(a.id)) return fals
           {!isMobile && (
             <aside style={{ width: 312, flexShrink: 0 }}>
               <div style={{ position: 'sticky', top: 81 }}>
-                <div style={{ background: '#F6F7F8', borderRadius: 16, border: '1px solid #EBEBEB', padding: 20, color: '#bbb', fontSize: 13, textAlign: 'center', fontFamily: 'var(--font-inter), Arial, sans-serif' }}>
-                  Widgets coming soon
-                </div>
+                {trending.length > 0 && (
+                  <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #EBEBEB', padding: 20 }}>
+                    <div style={{ fontSize: 15, fontWeight: 600, color: '#0f0f0f', marginBottom: 12, fontFamily: 'var(--font-inter), Arial, sans-serif' }}>Trending in Mumbai</div>
+                    {trending.map((item, i) => (
+                      <button
+                        key={item.locality_id}
+                        onClick={() => {
+                          const loc = localities.find(l => l.id === item.locality_id)
+                          if (loc) handleLocalityChange(loc)
+                        }}
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: '9px 8px', fontFamily: 'var(--font-inter), Arial, sans-serif', borderRadius: 8, borderBottom: i < trending.length - 1 ? '1px solid #F5F5F5' : 'none', transition: 'background 0.12s' }}
+                        onMouseEnter={e => { e.currentTarget.style.background = '#F7F7F7' }}
+                        onMouseLeave={e => { e.currentTarget.style.background = 'none' }}
+                      >
+                        <span style={{ fontSize: 13, fontWeight: 500, color: '#111', textAlign: 'left' }}>{item.locality_name}</span>
+                        <span style={{ fontSize: 12, color: '#888', flexShrink: 0, marginLeft: 8 }}>{item.count} {item.count === 1 ? 'story' : 'stories'}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </aside>
           )}

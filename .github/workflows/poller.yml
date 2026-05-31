@@ -33,7 +33,7 @@ jobs:
           while true; do
             output=$(node scripts/image_fetcher.mjs)
             echo "$output"
-            if echo "$output" | grep -q "No articles without images"; then
+            if echo "$output" | grep -qE "No articles without images|Found images: 0"; then
               break
             fi
           done
